@@ -1,0 +1,50 @@
+name: Destroy Server Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm scaling the server service to 0 tasks'
+        required: true
+
+env:
+  AWS_REGION: ap-south-1
+  ECS_CLUSTER: faraday-cluster
+  ECS_SERVICE: faraday-dc2-server-service
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Verify confirmation input
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Confirmation text did not match 'destroy'. Aborting."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::460442983432:role/faraday-dc2-github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Scale server service to 0
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --desired-count 0
+
+      - name: Wait for tasks to drain
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE
+
+      - name: Confirm
+        run: echo "Server service scaled to 0 running tasks."
