@@ -14,13 +14,18 @@ let items = [
 ];
 let nextId = 3;
 
-// GET /items - list all items
-app.get("/items", (req, res) => {
+// GET /health - used by the ALB target group health check
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
+
+// GET /api/items - list all items
+app.get("/api/items", (req, res) => {
   res.json(items);
 });
 
-// POST /items - create a new item
-app.post("/items", (req, res) => {
+// POST /api/items - create a new item
+app.post("/api/items", (req, res) => {
   const { name } = req.body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
@@ -32,8 +37,8 @@ app.post("/items", (req, res) => {
   res.status(201).json(newItem);
 });
 
-// DELETE /items/:id - delete an item by id
-app.delete("/items/:id", (req, res) => {
+// DELETE /api/items/:id - delete an item by id
+app.delete("/api/items/:id", (req, res) => {
   const id = Number(req.params.id);
   const index = items.findIndex((item) => item.id === id);
 
@@ -46,7 +51,7 @@ app.delete("/items/:id", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Express API is running. Try GET /items");
+  res.send("Express API is running. Try GET /api/items");
 });
 
 app.listen(PORT, () => {
